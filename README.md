@@ -164,6 +164,10 @@ const url = "https://serpapi.com/search.json?engine=google_scholar&q=deep+learni
 const res = await fetch(url);
 const data = await res.json();
 console.log(data);
+
+## Repository Access
+This repository is set to **public**, ensuring that the team can easily access all project deliverables.  
+If any access issues occur, please notify me so I can add specific collaborators.
 ```  
 
 ---
