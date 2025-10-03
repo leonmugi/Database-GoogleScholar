@@ -1,5 +1,5 @@
 ## Repository
-https://github.com/leonmugi/google-scholar-mvc
+https://github.com/leonmugi/Database-GoogleScholar/tree/main/CH3S2_codigo
 
 # Database-GoogleScholar
 A project about use an API to collect information in google Schoolar and save it in a Database
