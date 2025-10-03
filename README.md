@@ -172,3 +172,85 @@ If any access issues occur, please notify me so I can add specific collaborators
  
 
 ---
+
+### 🔹 SPRINT 2
+
+# Project Overview
+This project demonstrates how to combine Java, the Model–View–Controller (MVC) pattern, a MySQL database, and a public API to collect and organize information from Google Scholar. The app asks for a search term, finds the first relevant article that actually lists authors, enriches those author records when possible, saves them to MySQL, and can display the saved table in a simple window.
+
+--------------------------------------------------------------------------
+
+## Java with the MVC structure
+What it is: MVC keeps code tidy by separating responsibilities.
+
+- Model — the data and how we store it (our Author object and the database access code).
+- View — how information is shown to the user (console output and a small table window).
+- Controller — the “traffic cop” that talks to the API, turns results into data, and tells the Model and View what to do.
+
+Why it matters: This separation makes the code easier to read, test, and change. If you swap MySQL for another database or replace the console with a web page, the rest of the app can largely stay the same.
+
+--------------------------------------------------------------------------
+
+## API and SerpAPI
+API (Application Programming Interface): a contract that lets software talk to other software.
+SerpAPI: a service that exposes Google search results (including Google Scholar) through a developer-friendly API.
+
+How we use it here:
+- We call SerpAPI’s Google Scholar Search to get a list of results for the user’s query.
+- We pick the first result that actually lists authors.
+- For each author, if we can determine their Google Scholar author id (the `user=` value in profile links), we call SerpAPI’s Scholar Author endpoint to fetch citations and other basic details.
+
+Note: Some results don’t include an author profile id. In those cases we store what we have (the author’s name and the article where it appeared).
+
+--------------------------------------------------------------------------
+
+## MySQL
+What it is: a widely used relational database—well suited for small, structured datasets.
+
+How we use it here:
+- We store one row per author with columns:
+  - `author_name`, `author_id` (if available), `citations` (if available),
+  - `article_title` (where we found them), `profile_url`, and a timestamp.
+- We add a uniqueness rule so the same author for the same article isn’t inserted twice.
+
+--------------------------------------------------------------------------
+
+## How the program is organized
+The app consists of 7 classes arranged by MVC.
+
+Models
+- Author — a simple container for one author’s data:
+  name, author id (if found), total citations (if found), the article title we used, and the author’s profile link.
+- AuthorRepository — database access:
+  `saveAll(...)` inserts authors into MySQL using a batch (fast, and ignores duplicates).
+  `findAll()` reads the most recent rows so the table window can display them.
+- Db — opens a MySQL connection using environment variables (`DB_URL`, `DB_USER`, `DB_PASS`). Keeping this separate avoids scattering connection details around the code.
+
+Views
+- ConsoleView — prints a clean, readable summary to the terminal: each author’s name, id, citations, and profile link if there is one.
+- TableWindow — a small Swing (desktop) window that shows the saved table in a sortable grid with a “Close” button. It opens modally, so the program waits for the user to close it.
+
+Controller
+- ScholarController — the heart of the logic:
+  Calls SerpAPI for Scholar search results, chooses the first result that actually has authors, extracts author names, tries to resolve a Scholar author id (from the result or by parsing the profile link), fetches citations when an id exists, and returns a clean list of Author objects ready to save.
+
+Orchestrator
+- MainApp — the app’s entry point (the “conductor”):
+  Asks the user for a search phrase, invokes the controller to get authors for the first suitable article, saves them through the repository into MySQL, shows a summary in the console, and asks whether to open the table window. If the user agrees, it opens the modal window and returns to the prompt afterward. It repeats until the user types `salir`/`exit`.
+
+--------------------------------------------------------------------------
+
+## Program Flow
+1) The program starts by asking the user to enter a word or phrase to search on Google Scholar.
+2) Using the API, it retrieves the first article that appears in the results and extracts the authors listed for that article.
+3) For each author, the program gathers these fields:
+   - Author (name)
+   - Author ID (Google Scholar profile id, if available)
+   - Citations (total, if available)
+   - Article Title (the article where the author was found)
+   - Profile URL (link to the author’s Google Scholar profile, if available)
+4) The collected records are saved into a MySQL database.
+5) The program then displays the saved author information in the console and confirms that the data was successfully stored.
+6) Next, the user is asked if they want to view the saved data in a simple window.
+   - If the user says yes, a small interface opens showing the table.
+   - When the window is closed, the program asks whether the user wants to perform another search or finish the program.
