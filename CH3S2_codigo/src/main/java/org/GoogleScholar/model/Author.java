@@ -1,11 +1,20 @@
+// src/main/java/org/GoogleScholar/model/Author.java
 package org.GoogleScholar.model;
 
+/**
+ * Plain Model object representing what we store in MySQL:
+ * - name (always)
+ * - authorId (Scholar's "user" id) if available
+ * - citations (total) if available
+ * - articleTitle (the article whose authors we extracted)
+ * - profileUrl (direct link to the Scholar profile if we resolved authorId)
+ */
 public class Author {
     private final String name;
-    private final String authorId;     // user=... de Scholar
-    private final Integer citations;   // total de citas (all)
+    private final String authorId;
+    private final Integer citations;
     private final String articleTitle;
-    private final String profileUrl;   // link al perfil (si lo tenemos)
+    private final String profileUrl;
 
     public Author(String name, String authorId, Integer citations, String articleTitle, String profileUrl) {
         this.name = name;

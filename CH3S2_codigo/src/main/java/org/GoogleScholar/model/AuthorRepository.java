@@ -5,6 +5,11 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Repository: isolates SQL details.
+ * - saveAll(): batch insert with INSERT IGNORE (unique index prevents duplicates).
+ * - findAll(): read up to 500 recent rows for the Swing table.
+ */
 public class AuthorRepository {
 
     public void saveAll(List<Author> authors) throws SQLException {
@@ -23,11 +28,11 @@ public class AuthorRepository {
                 ps.setString(5, a.getProfileUrl());
                 ps.addBatch();
             }
-            ps.executeBatch();
+            ps.executeBatch(); // single roundtrip to DB
         }
     }
 
-    /** Trae hasta 500 filas para mostrar en la ventana */
+    /** Pull a small snapshot to display in the Swing table (sorted by newest id). */
     public List<Author> findAll() throws SQLException {
         String sql = """
             SELECT author_name, author_id, citations, article_title, profile_url

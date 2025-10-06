@@ -1,11 +1,7 @@
-// src/main/java/org/GoogleScholar/MainApp.java
 package org.GoogleScholar;
 
 import org.GoogleScholar.controller.ScholarController;
-import org.GoogleScholar.controller.ScholarController.ArticleFirst;
-import org.GoogleScholar.controller.ScholarController.AuthorRef;
-import org.GoogleScholar.model.Author;
-import org.GoogleScholar.model.AuthorRepository;
+import org.GoogleScholar.model.*;
 import org.GoogleScholar.view.ConsoleView;
 import org.GoogleScholar.view.TableWindow;
 
@@ -16,65 +12,54 @@ import java.util.Scanner;
 
 public class MainApp {
     public static void main(String[] args) {
-        // fuerza GUI por si el entorno entra headless
         System.setProperty("java.awt.headless", "false");
 
         ScholarController controller = new ScholarController();
-        AuthorRepository repo = new AuthorRepository();
+        ArticleRepository repo = new ArticleRepository();
+        IssueRepository issueRepo = new IssueRepository();
         ConsoleView view = new ConsoleView();
         Scanner sc = new Scanner(System.in);
 
-        boolean usedArgsOnce = false;
-
         while (true) {
-            // === 1) Búsqueda ===
-            String query;
-            if (!usedArgsOnce && args != null && args.length > 0) {
-                query = String.join(" ", args);
-                usedArgsOnce = true;
-            } else {
-                System.out.print("Please write your search (or 'exit'): ");
-                query = sc.nextLine().trim();
-                if (query.equalsIgnoreCase("exit") || query.equalsIgnoreCase("exit")) break;
-                if (query.isEmpty()) {
-                    System.out.println("→ Enter some text.\n");
-                    continue;
-                }
-            }
+            System.out.print("Enter Author 1 (or 'exit'): ");
+            String a1 = sc.nextLine().trim();
+            if (a1.equalsIgnoreCase("exit") || a1.equalsIgnoreCase("salir")) break;
+            if (a1.isEmpty()) { System.out.println("→ Please type a name.\n"); continue; }
+
+            System.out.print("Enter Author 2 (or 'exit'): ");
+            String a2 = sc.nextLine().trim();
+            if (a2.equalsIgnoreCase("exit") || a2.equalsIgnoreCase("salir")) break;
+            if (a2.isEmpty()) { System.out.println("→ Please type a name.\n"); continue; }
 
             try {
-                // === 2) Primer artículo con autores ===
-                ArticleFirst art = controller.fetchFirstArticleAndAuthors(query);
+                List<Article> toSave = new ArrayList<>();
+                toSave.addAll(controller.fetchTopArticlesByAuthorName(a1, 3));
+                toSave.addAll(controller.fetchTopArticlesByAuthorName(a2, 3));
 
-                List<Author> toSave = new ArrayList<>();
-                for (AuthorRef ref : art.authors) {
-                    toSave.add(controller.enrichAuthor(ref, art.title));
-                }
                 repo.saveAll(toSave);
                 view.savedToDbNotice(toSave.size());
-                view.renderAuthors(toSave, art.title);
+                view.renderArticles(toSave);
 
-                // === 3) Preguntar si abrir ventana ===
-                String ver;
+                // Guardar y mostrar incidencias
+                List<Issue> issues = controller.drainIssues();
+                issueRepo.saveAll(issues);
+                view.renderIssuesSummary(issues);
+
+                String ans;
                 while (true) {
-                    System.out.print("¿Do you wan to see the table in a window? (y/n): ");
-                    ver = sc.nextLine().trim().toLowerCase(Locale.ROOT);
-                    if (ver.equals("y") || ver.equals("yep") || ver.equals("yes") || ver.equals("n") || ver.equals("not")) break;
-                    System.out.println("Respond 'y' o 'n', please.");
+                    System.out.print("Do you want to see the table in a window? (y/n): ");
+                    ans = sc.nextLine().trim().toLowerCase(Locale.ROOT);
+                    if (ans.equals("y") || ans.equals("n")) break;
                 }
-                if (ver.startsWith("y")) {
-                    System.out.println("→ open window…");       // DEBUG 1
-                    var all = repo.findAll();
-                    TableWindow.showModal(all);                       // MODAL; bloquea hasta cerrar
-                    System.out.println("→ window closed.\n");       // DEBUG 2 (aparece al cerrar)
+                if (ans.equals("y")) {
+                    TableWindow.showArticlesModal(repo.findAll());
                 }
+                System.out.println();
 
             } catch (Exception e) {
                 System.err.println("Error: " + e.getMessage());
                 e.printStackTrace();
             }
-
-            System.out.println();
         }
 
         sc.close();
